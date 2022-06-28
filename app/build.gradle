@@ -8,25 +8,33 @@ apply from: '../dependencies.gradle'
 def appVersionName = "1.0." + rootProject.gitCommitsForThisRelease
 def appVersionCode = rootProject.gitCommitCount
 
+
+def gradlePropertiesFile = rootProject.file("gradle.properties")
+def gradleProperties = new Properties()
+gradleProperties.load(new FileInputStream(gradlePropertiesFile))
+
+
 android {
+    signingConfigs {
+        release {
+            storeFile file(gradleProperties['STORE_FILE'])
+            storePassword gradleProperties['STORE_PASSWORD']
+            keyPassword gradleProperties['KEY_PASSWORD']
+            keyAlias gradleProperties['KEY_ALIAS']
+        }
+    }
     compileSdk versions.compileSdk
 
     defaultConfig {
         applicationId "com.project.wrapper"
         minSdk versions.minSdk
         targetSdk versions.targetSdk
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appVersionName
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -37,6 +45,36 @@ android {
     buildFeatures {
         viewBinding true
     }
+    buildTypes {
+        release {
+            manifestPlaceholders = [partner:"purevpn"]
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+
+        }
+        debug {
+            manifestPlaceholders = [partner:"purevpnuat"]
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+            debuggable true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+
+    }
+
+    flavorDimensions "version"
+    productFlavors {
+        dev {
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+        }
+
+        production {
+        }
+    }
+
 }
 
 dependencies {
